@@ -5,6 +5,7 @@ const User = z.object({
   email: z.string(),
   password: z.string(),
   username: z.string(),
+  type: z.string(),
 });
 
 module.exports = User;
