@@ -49,10 +49,10 @@ exports.getAllArticles = async (req, res) => {
     const articleResult = await db.query(
       sql.type(Article)`SELECT * FROM articles;`
     );
-    const article = articleResult.rows;
+    const articles = articleResult.rows;
     console.log("Articles returned by getAllArticles");
-    console.log({ article });
-    res.json({ article });
+    console.log({ articles });
+    res.json({ articles });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });

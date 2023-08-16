@@ -5,7 +5,9 @@ const seed = require("./db/seed");
 seed();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({ origin: process.env.FRONT_END_URL, exposedHeaders: ["auth-token"] })
+);
 app.use(express.json());
 
 // Import routes

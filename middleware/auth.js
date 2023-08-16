@@ -4,7 +4,7 @@ function auth(req, res, next) {
   let token = req.header("auth-token");
   if (!token) {
     return res.status(401).json({
-      message: "User must log in to gain access",
+      error: "User must log in to gain access",
     });
   }
   try {
@@ -16,8 +16,9 @@ function auth(req, res, next) {
     res.set("auth-token", newToken);
     next();
   } catch (err) {
-    res.status(400).json({
-      message: "Token could not be verified",
+    console.log(err);
+    res.status(401).json({
+      error: "Token could not be verified",
     });
   }
 }
