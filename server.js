@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const seed = require("./db/seed");
 seed();
+const socketConnect = require("./db/socketConnect");
 
 const app = express();
 app.use(
@@ -18,6 +19,8 @@ app.use("/api/comment", require("./routes/comment"));
 
 // Start the server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+socketConnect(server);

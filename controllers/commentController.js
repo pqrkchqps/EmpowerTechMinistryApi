@@ -17,17 +17,7 @@ function createCommentFunctionWithType(type) {
       }
 
       const db = await pool;
-      // Check if user exists
-      const userExists = await db.query(
-        sql.type(User)`SELECT * FROM users WHERE id = ${id};`
-      );
 
-      if (userExists.rows.length === 0) {
-        console.log("User Id doesn't exist");
-        return res.status(400).json({ error: "User Id doesn't exist" });
-      }
-
-      // Create new user
       const newCommentResult = await db.query(sql.type(
         Comment
       )`INSERT INTO comments (userid, parentid, rootid, content, type)
