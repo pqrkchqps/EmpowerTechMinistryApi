@@ -7,7 +7,6 @@ function socketConnect(server) {
   // broadcasting ping
   setInterval(function () {
     io.emit("ping", { timestamp: new Date().getTime() });
-    console.log("sent ping");
   }, 5000); // 10 seconds
 
   // cleaning up stalled socket which does not answer to ping
@@ -29,7 +28,6 @@ function socketConnect(server) {
     aliveSockets[socket.id] = { socket, lastPong: new Date().getTime() / 1000 };
 
     socket.on("pong", function () {
-      console.log("got pong");
       aliveSockets[socket.id] = {
         socket: socket,
         lastPong: new Date().getTime() / 1000,
