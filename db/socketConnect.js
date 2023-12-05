@@ -57,6 +57,7 @@ function socketConnect(server) {
         console.log("Received notification:", data.channel, data.payload);
         // Handle the notification payload here
         const notificationData = JSON.parse(data.payload);
+        notificationData.children = [];
         io.emit("newNotification", {data: notificationData, type: data.channel});
       });
     }
