@@ -24,7 +24,7 @@ exports.createThread = async (req, res) => {
       return res.status(400).json({ error: "User Id doesn't exist" });
     }
 
-    // Create new user
+    // Create new
     const newThreadResult = await db.query(sql.type(
       Thread
     )`INSERT INTO threads (userid, title, content)
@@ -47,7 +47,13 @@ exports.getAllThreads = async (req, res) => {
 
     // Check if user exists
     const threadResult = await db.query(
-      sql.type(Thread)`SELECT * FROM threads;`
+      sql.type(Thread)`SELECT 
+      t.title, t.content, t.id, u.username,
+      EXTRACT (YEAR FROM date) AS YEAR,
+      EXTRACT (MONTH FROM date) AS MONTH,
+      EXTRACT (DAY FROM date) AS DAY 
+      FROM threads t
+      LEFT JOIN users u ON t.userid = u.id;`
     );
     const threads = threadResult.rows;
     console.log("Threads returned by getAllThreads");
@@ -72,14 +78,26 @@ exports.getThreadById = async (req, res) => {
 
     // Check if user exists
     const parentThreadResult = await db.query(
-      sql.type(Thread)`SELECT * FROM threads WHERE id = ${id};`
+      sql.type(Thread)`SELECT 
+      t.title, t.content, t.id, u.username,
+      EXTRACT (YEAR FROM date) AS YEAR,
+      EXTRACT (MONTH FROM date) AS MONTH,
+      EXTRACT (DAY FROM date) AS DAY
+      FROM threads t
+      LEFT JOIN users u ON t.userid = u.id
+      WHERE t.id = ${id};`
     );
     const parentThread = parentThreadResult.rows[0];
 
     const commentsResult = await db.query(
-      sql.type(
-        Comment
-      )`SELECT * FROM comments WHERE rootid = ${id} AND type = 'thread';`
+      sql.type(Comment)`SELECT 
+      c.content, c.id, c.parentid, u.username,
+      EXTRACT (YEAR FROM date) AS YEAR,
+      EXTRACT (MONTH FROM date) AS MONTH,
+      EXTRACT (DAY FROM date) AS DAY
+      FROM comments c 
+      LEFT JOIN users u ON c.userid = u.id
+      WHERE rootid = ${id} AND c.type = 'thread';`
     );
 
     const comments = commentsResult.rows;

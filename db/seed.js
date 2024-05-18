@@ -39,36 +39,101 @@ async function seed() {
   await db.any(sql.unsafe`
       CREATE OR REPLACE FUNCTION THREAD_NOTIFY() RETURNS trigger AS
       $BODY$
+      DECLARE
+        username TEXT;
       BEGIN
-          PERFORM pg_notify('thread', row_to_json(NEW)::text);
-          RETURN new;
+        -- Retrieve the username of the user who made the comment
+        SELECT u.username INTO username
+        FROM users u
+        WHERE u.id = NEW.userid;
+
+        PERFORM pg_notify('thread', 
+          JSON_BUILD_OBJECT(
+            'content', NEW.content, 
+            'id', NEW.id, 
+            'username', username,
+            'userid', NEW.userid,
+            'year', EXTRACT (YEAR FROM NEW.date),
+            'month', EXTRACT (MONTH FROM NEW.date),
+            'day', EXTRACT (DAY FROM NEW.date),
+            'title', NEW.title,
+            'views', NEW.views
+          )::TEXT
+        );
+        RETURN NEW;
       END;
       $BODY$
-      LANGUAGE 'plpgsql' VOLATILE COST 100;
+      LANGUAGE 'plpgsql';
   `);
 
   // Create the ARTICLE_NOTIFY function if it doesn't exist
   await db.any(sql.unsafe`
       CREATE OR REPLACE FUNCTION ARTICLE_NOTIFY() RETURNS trigger AS
       $BODY$
+      DECLARE
+        username TEXT;
       BEGIN
-          PERFORM pg_notify('article', row_to_json(NEW)::text);
-          RETURN new;
+        -- Retrieve the username of the user who made the comment
+        SELECT u.username INTO username
+        FROM users u
+        WHERE u.id = NEW.userid;
+
+        PERFORM pg_notify('article', 
+          JSON_BUILD_OBJECT(
+            'content', NEW.content, 
+            'id', NEW.id, 
+            'username', username,
+            'userid', NEW.userid,
+            'year', EXTRACT (YEAR FROM NEW.date),
+            'month', EXTRACT (MONTH FROM NEW.date),
+            'day', EXTRACT (DAY FROM NEW.date),
+            'title', NEW.title,
+            'views', NEW.views
+          )::TEXT
+        );
+        RETURN NEW;
       END;
       $BODY$
-      LANGUAGE 'plpgsql' VOLATILE COST 100;
+      LANGUAGE 'plpgsql';
   `);
 
   // Create the COMMENT_NOTIFY function if it doesn't exist
   await db.any(sql.unsafe`
       CREATE OR REPLACE FUNCTION COMMENT_NOTIFY() RETURNS trigger AS
       $BODY$
+      DECLARE
+        username TEXT;
+        title TEXT;
       BEGIN
-          PERFORM pg_notify('comment', row_to_json(NEW)::text);
-          RETURN new;
+      -- Retrieve the username of the user who made the comment
+      SELECT u.username INTO username
+      FROM users u
+      WHERE u.id = NEW.userid;
+
+      -- Retrieve the title of the thread containing the comment
+      SELECT t.title INTO title
+      FROM threads t
+      WHERE t.id = NEW.rootid;
+
+      PERFORM pg_notify('comment', 
+        JSON_BUILD_OBJECT(
+          'content', NEW.content, 
+          'id', NEW.id, 
+          'parentid', NEW.parentid, 
+          'rootid', NEW.rootid, 
+          'username', username,
+          'userid', NEW.userid,
+          'year', EXTRACT (YEAR FROM NEW.date),
+          'month', EXTRACT (MONTH FROM NEW.date),
+          'day', EXTRACT (DAY FROM NEW.date),
+          'title', title,
+          'type', NEW.type
+        )::TEXT
+      );
+      RETURN NEW;
       END;
       $BODY$
-      LANGUAGE 'plpgsql' VOLATILE COST 100;
+      LANGUAGE 'plpgsql';
   `);
 
   await db.any(sql.unsafe`
