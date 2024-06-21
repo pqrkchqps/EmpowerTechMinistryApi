@@ -10,12 +10,14 @@ async function seed() {
         username VARCHAR unique NOT NULL,
         type VARCHAR NOT NULL default 'user')`);
 
+
   db.any(sql.unsafe`CREATE TABLE if not exists threads 
         ( id SERIAL PRIMARY KEY,
         userid SERIAL NOT NULL references users(id),
         title VARCHAR,
         content VARCHAR,
         date timestamp NOT NULL DEFAULT NOW(),
+        comment_count BIGINT NOT NULL DEFAULT 0,
         views BIGINT NOT NULL DEFAULT 0)`);
 
   db.any(sql.unsafe`CREATE TABLE if not exists articles 
@@ -113,6 +115,11 @@ async function seed() {
       -- Retrieve the title of the thread containing the comment
       SELECT t.title INTO title
       FROM threads t
+      WHERE t.id = NEW.rootid;
+
+      -- Update comment_count of matching thread
+      UPDATE threads t
+      SET comment_count = comment_count + 1
       WHERE t.id = NEW.rootid;
 
       PERFORM pg_notify('comment', 

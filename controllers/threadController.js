@@ -48,7 +48,7 @@ exports.getAllThreads = async (req, res) => {
     // Check if user exists
     const threadResult = await db.query(
       sql.type(Thread)`SELECT 
-      t.title, t.content, t.id, u.username,
+      t.title, t.content, t.id, u.username, t.views, t.comment_count,
       EXTRACT (YEAR FROM date) AS YEAR,
       EXTRACT (MONTH FROM date) AS MONTH,
       EXTRACT (DAY FROM date) AS DAY 
@@ -79,7 +79,7 @@ exports.getThreadById = async (req, res) => {
     // Check if user exists
     const parentThreadResult = await db.query(
       sql.type(Thread)`SELECT 
-      t.title, t.content, t.id, u.username,
+      t.title, t.content, t.id, u.username, t.views, t.comment_count,
       EXTRACT (YEAR FROM date) AS YEAR,
       EXTRACT (MONTH FROM date) AS MONTH,
       EXTRACT (DAY FROM date) AS DAY
