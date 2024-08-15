@@ -3,11 +3,16 @@ const { sql } = require("slonik");
 
 async function seed() {
   const db = await pool;
+
   db.any(sql.unsafe`CREATE TABLE if not exists users 
         ( id SERIAL PRIMARY KEY,
         email VARCHAR unique NOT NULL,
         password VARCHAR NOT NULL,
         username VARCHAR unique NOT NULL,
+        date timestamp DEFAULT NOW(),
+        description VARCHAR,
+        name VARCHAR,
+        image VARCHAR,
         type VARCHAR NOT NULL default 'user')`);
 
 

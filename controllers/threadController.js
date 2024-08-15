@@ -49,9 +49,9 @@ exports.getAllThreads = async (req, res) => {
     const threadResult = await db.query(
       sql.type(Thread)`SELECT 
       t.title, t.content, t.id, u.username, t.views, t.comment_count,
-      EXTRACT (YEAR FROM date) AS YEAR,
-      EXTRACT (MONTH FROM date) AS MONTH,
-      EXTRACT (DAY FROM date) AS DAY 
+      EXTRACT (YEAR FROM t.date) AS YEAR,
+      EXTRACT (MONTH FROM t.date) AS MONTH,
+      EXTRACT (DAY FROM t.date) AS DAY 
       FROM threads t
       LEFT JOIN users u ON t.userid = u.id;`
     );
@@ -80,9 +80,9 @@ exports.getThreadById = async (req, res) => {
     const parentThreadResult = await db.query(
       sql.type(Thread)`SELECT 
       t.title, t.content, t.id, u.username, t.views, t.comment_count,
-      EXTRACT (YEAR FROM date) AS YEAR,
-      EXTRACT (MONTH FROM date) AS MONTH,
-      EXTRACT (DAY FROM date) AS DAY
+      EXTRACT (YEAR FROM t.date) AS YEAR,
+      EXTRACT (MONTH FROM t.date) AS MONTH,
+      EXTRACT (DAY FROM t.date) AS DAY
       FROM threads t
       LEFT JOIN users u ON t.userid = u.id
       WHERE t.id = ${id};`
@@ -92,9 +92,9 @@ exports.getThreadById = async (req, res) => {
     const commentsResult = await db.query(
       sql.type(Comment)`SELECT 
       c.content, c.id, c.parentid, u.username,
-      EXTRACT (YEAR FROM date) AS YEAR,
-      EXTRACT (MONTH FROM date) AS MONTH,
-      EXTRACT (DAY FROM date) AS DAY
+      EXTRACT (YEAR FROM c.date) AS YEAR,
+      EXTRACT (MONTH FROM c.date) AS MONTH,
+      EXTRACT (DAY FROM c.date) AS DAY
       FROM comments c 
       LEFT JOIN users u ON c.userid = u.id
       WHERE rootid = ${id} AND c.type = 'thread';`
