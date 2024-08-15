@@ -13,6 +13,7 @@ app.use(express.json());
 
 // Import routes
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/user", require("./routes/user"));
 app.use("/api/thread", require("./routes/thread"));
 app.use("/api/article", require("./routes/article"));
 app.use("/api/comment", require("./routes/comment"));
