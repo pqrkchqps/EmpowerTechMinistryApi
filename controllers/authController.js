@@ -3,6 +3,8 @@ const { sql } = require("slonik");
 const pool = require("../db/pool");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const uuid = require("uuid");
+const uuidv4 = uuid.v4;
 
 exports.registerUser = async (req, res) => {
   try {
@@ -19,16 +21,26 @@ exports.registerUser = async (req, res) => {
 
     const db = await pool;
     // Check if user exists
-    const userExists = await db.query(
-      sql.type(
-        User
-      )`SELECT * FROM users WHERE email = ${email} OR username = ${username};`
+    const emailExists = await db.query(
+      sql.type(User)`SELECT * FROM users WHERE email = ${email};`
     );
-    if (userExists.rows.length > 0) {
-      console.log("Email or Username already exists");
-      return res
-        .status(400)
-        .json({ error: "Email or Username already exists" });
+    if (emailExists.rows.length > 0) {
+      console.log("Email already exists");
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
+    checkUsername(username);
+
+    async function checkUsername(un) {
+      const usernameExists = await db.query(
+        sql.type(User)`SELECT * FROM users WHERE username = ${un};`
+      );
+      if (usernameExists.rows.length > 0) {
+        username += "-" + uuidv4();
+        checkUsername(username);
+      } else {
+        username = un;
+      }
     }
 
     // Hash password
@@ -46,7 +58,7 @@ exports.registerUser = async (req, res) => {
     const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
       expiresIn: 3600,
     });
-    res.header("auth-token", token).json({ newUser });
+    res.header("auth-token", token).json({ user: newUser });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });
