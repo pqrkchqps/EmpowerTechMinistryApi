@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const uuid = require("uuid");
 const uuidv4 = uuid.v4;
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client();
 
 exports.registerUser = async (req, res) => {
   try {
@@ -67,7 +69,7 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   try {
-    let { email, password } = req.body;
+    let { email, password, id_token } = req.body;
 
     if (!email || !password) {
       console.log("Missing email or password");
@@ -94,6 +96,26 @@ exports.loginUser = async (req, res) => {
     if (!validPassword) {
       console.log("Invalid password");
       return res.status(400).json({ error: "Invalid password" });
+    }
+
+    if (validPassword === "google account") {
+      if (!id_token) {
+        console.log("Missing id_token");
+        return res.status(400).json({ error: "Missing id_token" });
+      }
+
+      const ticket = await client.verifyIdToken({
+        idToken: id_token,
+        audience: process.env.CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+
+      if (payload.email !== email || payload.exp < Date.now() / 1000) {
+        console.log("Token is not valid for this account");
+        return res
+          .status(400)
+          .json({ error: "Token is not valid for this account" });
+      }
     }
 
     // Sign and send JWT
