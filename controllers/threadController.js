@@ -29,12 +29,22 @@ exports.createThread = async (req, res) => {
       Thread
     )`INSERT INTO threads (userid, title, content)
     VALUES (${id}, ${title}, ${content})
-    RETURNING *;`);
+    RETURNING id;`);
 
-    const thread = newThreadResult.rows[0];
+    const threadId = newThreadResult.rows[0].id;
+    const threadResult = await db.query(
+      sql.type(Thread)`SELECT 
+      t.title, t.content, t.id, u.username, t.views, t.comment_count,
+      EXTRACT (YEAR FROM t.date) AS YEAR,
+      EXTRACT (MONTH FROM t.date) AS MONTH,
+      EXTRACT (DAY FROM t.date) AS DAY 
+      FROM threads t
+      LEFT JOIN users u ON t.userid = u.id
+      WHERE t.id = ${threadId};`
+    );
     console.log("Thread returned by createThread");
-    console.log(thread);
-    res.json({ thread });
+    console.log(threadResult.rows[0]);
+    res.json({ thread: threadResult.rows[0] });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });
