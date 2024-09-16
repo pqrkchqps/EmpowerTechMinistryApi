@@ -35,7 +35,14 @@ exports.getUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { username, name, image, description } = req.params;
+    let { username, name, image, description } = req.body;
+
+    if (!username || !name || !image || !description) {
+      console.log("Missing username, name, image or description");
+      return res
+        .status(400)
+        .json({ error: "Missing username, name, image or description" });
+    }
     let { id } = req.user;
 
     const db = await pool;
@@ -61,10 +68,10 @@ exports.updateUser = async (req, res) => {
     }
     const updatedUser = await db.query(
       sql.type(User)`UPDATE users SET 
-      username = ${username} 
-      description = ${description} 
-      name = ${name} 
-      image = ${image} 
+      username = ${username},
+      description = ${description},
+      name = ${name},
+      image = ${image}
       WHERE id = ${id}
       RETURNING email, username, date, description, name, image;`
     );

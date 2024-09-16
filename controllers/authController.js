@@ -52,8 +52,8 @@ exports.registerUser = async (req, res) => {
     // Create new user
     const newUser = await db.query(sql.type(
       User
-    )`INSERT INTO users (username, email, password)
-    VALUES (${username}, ${email}, ${hashedPassword})
+    )`INSERT INTO users (username, email, password, name, description)
+    VALUES (${username}, ${email}, ${hashedPassword}, ${username}, ${"I’m here to succeed in my goals."})
     RETURNING *;`);
 
     // Sign and send JWT

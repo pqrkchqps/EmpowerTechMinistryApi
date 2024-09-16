@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 const userController = require("../controllers/userController");
 
 router.get("/:email", auth, userController.getUser);
-router.post("/update", auth, userController.updateUser);
+router.put("/update", auth, userController.updateUser);
 
 
 module.exports = router;
