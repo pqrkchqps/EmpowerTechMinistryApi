@@ -25,9 +25,20 @@ function createCommentFunctionWithType(type) {
       RETURNING *;`);
 
       const comment = newCommentResult.rows[0];
+
+      const commentsResult = await db.query(
+        sql.type(Comment)`SELECT 
+        c.content, c.id, c.parentid, u.username,
+        EXTRACT (YEAR FROM c.date) AS YEAR,
+        EXTRACT (MONTH FROM c.date) AS MONTH,
+        EXTRACT (DAY FROM c.date) AS DAY
+        FROM comments c 
+        LEFT JOIN users u ON c.userid = u.id
+        WHERE c.id = ${comment.id};`
+      );
       console.log("Comment returned by createThreadComment");
-      console.log(comment);
-      res.json({ comment });
+      console.log(commentsResult.rows[0]);
+      res.json({ comment: commentsResult.rows[0] });
     } catch (err) {
       console.log(err);
       res.status(500).json({ error: "Server error" });
