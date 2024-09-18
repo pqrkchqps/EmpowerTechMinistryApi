@@ -101,7 +101,7 @@ exports.getThreadById = async (req, res) => {
 
     const commentsResult = await db.query(
       sql.type(Comment)`SELECT 
-      c.content, c.id, c.parentid, u.username,
+      c.content, c.id, c.parentid, u.username, u.name, u.image,
       EXTRACT (YEAR FROM c.date) AS YEAR,
       EXTRACT (MONTH FROM c.date) AS MONTH,
       EXTRACT (DAY FROM c.date) AS DAY
