@@ -13,8 +13,9 @@ async function seed() {
         description VARCHAR,
         name VARCHAR,
         image VARCHAR,
+        thread_comment_read_count BIGINT NOT NULL DEFAULT 0,
+        article_comment_read_count BIGINT NOT NULL DEFAULT 0,
         type VARCHAR NOT NULL default 'user')`);
-
 
   db.any(sql.unsafe`CREATE TABLE if not exists threads 
         ( id SERIAL PRIMARY KEY,

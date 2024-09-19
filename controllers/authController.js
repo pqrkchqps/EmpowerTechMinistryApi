@@ -60,6 +60,7 @@ exports.registerUser = async (req, res) => {
     const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
       expiresIn: 3600,
     });
+    delete newUser.password;
     res.header("auth-token", token).json({ user: newUser });
   } catch (err) {
     console.log(err);
@@ -122,6 +123,7 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: 3600,
     });
+    delete user.password;
     res.header("auth-token", token).json({ user });
   } catch (err) {
     console.log(err);
