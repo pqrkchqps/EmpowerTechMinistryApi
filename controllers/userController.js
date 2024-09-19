@@ -82,3 +82,79 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+exports.setThreadReadCount = async (req, res) => {
+  try {
+    let { thread_comment_read_count } = req.body;
+
+    if (!thread_comment_read_count) {
+      console.log("Missing thread_comment_read_count");
+      return res
+        .status(400)
+        .json({ error: "Missing thread_comment_read_count" });
+    }
+
+    let { id } = req.user;
+
+    const db = await pool;
+    // Check if user exists
+    const userExists = await db.query(
+      sql.type(User)`SELECT * FROM users WHERE id = ${id};`
+    );
+
+    if (userExists.rows.length === 0) {
+      console.log(`User not found`);
+      return res.status(400).json({ error: `User not found` });
+    }
+
+    const updatedUser = await db.query(
+      sql.type(User)`UPDATE users SET 
+      thread_comment_read_count = ${thread_comment_read_count}
+      WHERE id = ${id}
+      RETURNING thread_comment_read_count;`
+    );
+
+    res.json({ user: updatedUser.rows[0] });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.setArticleReadCount = async (req, res) => {
+  try {
+    let { article_comment_read_count } = req.body;
+
+    if (!article_comment_read_count) {
+      console.log("Missing article_comment_read_count");
+      return res
+        .status(400)
+        .json({ error: "Missing article_comment_read_count" });
+    }
+
+    let { id } = req.user;
+
+    const db = await pool;
+    // Check if user exists
+    const userExists = await db.query(
+      sql.type(User)`SELECT * FROM users WHERE id = ${id};`
+    );
+
+    if (userExists.rows.length === 0) {
+      console.log(`User not found`);
+      return res.status(400).json({ error: `User not found` });
+    }
+
+    const updatedUser = await db.query(
+      sql.type(User)`UPDATE users SET 
+      article_comment_read_count = ${article_comment_read_count}
+      WHERE id = ${id}
+      RETURNING article_comment_read_count;`
+    );
+
+    res.json({ user: updatedUser.rows[0] });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
