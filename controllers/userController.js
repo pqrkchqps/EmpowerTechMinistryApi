@@ -1,8 +1,6 @@
 const User = require("../models/User");
 const { sql } = require("slonik");
 const pool = require("../db/pool");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 exports.getUser = async (req, res) => {
   try {
