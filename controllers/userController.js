@@ -16,7 +16,7 @@ exports.getUser = async (req, res) => {
     const db = await pool;
     // Check if user exists
     const userExists = await db.query(
-      sql.type(User)`SELECT email, username FROM users WHERE email = ${email};`
+      sql.type(User)`SELECT * FROM users WHERE email = ${email};`
     );
     if (userExists.rows.length === 0) {
       console.log(`User with '${email}' email not found`);
@@ -24,7 +24,9 @@ exports.getUser = async (req, res) => {
         .status(400)
         .json({ error: `User with '${email}' email not found` });
     }
-    res.json({ user: userExists.rows[0] });
+    const user = userExists.rows[0];
+    delete user.password;
+    res.json({ user });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });
