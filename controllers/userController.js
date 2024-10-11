@@ -37,11 +37,11 @@ exports.updateUser = async (req, res) => {
   try {
     let { username, name, image, description } = req.body;
 
-    if (!username || !name || !image || !description) {
-      console.log("Missing username, name, image or description");
+    if (!username || !name || !description) {
+      console.log("Missing username, name or description");
       return res
         .status(400)
-        .json({ error: "Missing username, name, image or description" });
+        .json({ error: "Missing username, name or description" });
     }
     let { id } = req.user;
 
