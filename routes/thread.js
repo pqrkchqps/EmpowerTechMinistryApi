@@ -5,6 +5,8 @@ const auth = require("../middleware/auth");
 const { checkGeneral } = require("../middleware/checkUser");
 
 router.post("/", auth, checkGeneral, threadController.createThread);
+router.patch("/:id", auth, checkGeneral, threadController.editThread);
+
 router.get("/", threadController.getAllThreads);
 router.get("/:id", threadController.getThreadById);
 

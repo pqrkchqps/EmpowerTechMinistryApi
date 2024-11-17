@@ -15,15 +15,6 @@ exports.createThread = async (req, res) => {
     }
 
     const db = await pool;
-    // Check if user exists
-    const userExists = await db.query(
-      sql.type(User)`SELECT * FROM users WHERE id = ${id};`
-    );
-    if (userExists.rows.length === 0) {
-      console.log("User Id doesn't exist");
-      return res.status(400).json({ error: "User Id doesn't exist" });
-    }
-
     // Create new
     const newThreadResult = await db.query(sql.type(
       Thread
@@ -45,6 +36,61 @@ exports.createThread = async (req, res) => {
     console.log("Thread returned by createThread");
     console.log(threadResult.rows[0]);
     res.json({ thread: threadResult.rows[0] });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.editThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title } = req.body;
+    let { content } = req.body;
+    const { id: userId } = req.user;
+
+    if (!title) {
+      console.log("Missing title");
+      return res.status(400).json({ error: "Missing title" });
+    }
+
+    if (!content) {
+      content = "";
+    }
+
+    const db = await pool;
+
+    const foundThreadResult = await db.query(
+      sql.type(Thread)`SELECT * FROM threads WHERE id = ${id};`
+    );
+
+    const thread = foundThreadResult.rows[0];
+
+    if (thread.userid === userId) {
+      const updatedThreadResult = await db.query(sql.type(
+        Thread
+      )`UPDATE threads SET
+      title = ${title},
+      content = ${content}
+      RETURNING id;`);
+
+      const threadId = updatedThreadResult.rows[0].id;
+      const threadResult = await db.query(
+        sql.type(Thread)`SELECT 
+        t.title, t.content, t.id, u.username, t.views, t.comment_count,
+        EXTRACT (YEAR FROM t.date) AS YEAR,
+        EXTRACT (MONTH FROM t.date) AS MONTH,
+        EXTRACT (DAY FROM t.date) AS DAY 
+        FROM threads t
+        LEFT JOIN users u ON t.userid = u.id
+        WHERE t.id = ${threadId};`
+      );
+      console.log("Thread returned by createThread");
+      console.log(threadResult.rows[0]);
+      res.json({ thread: threadResult.rows[0] });
+    } else {
+      res.status(401).json({ error: `You do not own thread ${id}` });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });

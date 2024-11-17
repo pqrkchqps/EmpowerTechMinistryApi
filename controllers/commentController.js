@@ -110,7 +110,7 @@ function editCommentFunctionWithType(type) {
         );
         res.json({ updatedComment: updatedCommentResult.rows[0] });
       } else {
-        res.status(401).json({ error: `Do not own comment ${id}` });
+        res.status(401).json({ error: `You do not own comment ${id}` });
       }
     } catch (err) {
       console.log(err);
