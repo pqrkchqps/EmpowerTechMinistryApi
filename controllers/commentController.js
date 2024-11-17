@@ -82,7 +82,48 @@ function deleteCommentFunctionWithType(type) {
   };
 }
 
+function editCommentFunctionWithType(type) {
+  return async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      const { id: userId } = req.user;
+
+      if (!id || !userId || !content) {
+        console.log("Missing id or content");
+        return res.status(400).json({ error: "Missing id or content" });
+      }
+
+      const db = await pool;
+
+      const foundCommentResult = await db.query(
+        sql.type(Comment)`SELECT * FROM comments WHERE id = ${id};`
+      );
+
+      const comment = foundCommentResult.rows[0];
+
+      if (comment.userid === userId) {
+        const updatedCommentResult = await db.query(
+          sql.type(Comment)`update comments 
+          SET content = ${content}
+          WHERE id = ${id} and userid = ${userId};`
+        );
+        res.json({ updatedComment: updatedCommentResult.rows[0] });
+      } else {
+        res.status(401).json({ error: `Do not own comment ${id}` });
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: "Server error" });
+    }
+  };
+}
+
 exports.createThreadComment = createCommentFunctionWithType("thread");
 exports.createArticleComment = createCommentFunctionWithType("article");
+
 exports.deleteThreadComment = deleteCommentFunctionWithType("thread");
 exports.deleteArticleComment = deleteCommentFunctionWithType("article");
+
+exports.editThreadComment = editCommentFunctionWithType("thread");
+exports.editArticleComment = editCommentFunctionWithType("article");

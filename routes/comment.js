@@ -30,4 +30,17 @@ router.delete(
   commentController.deleteArticleComment
 );
 
+router.patch(
+  "/thread/:id",
+  auth,
+  checkGeneral,
+  commentController.editThreadComment
+);
+router.patch(
+  "/article/:id",
+  auth,
+  checkGeneral,
+  commentController.editArticleComment
+);
+
 module.exports = router;
