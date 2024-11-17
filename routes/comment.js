@@ -17,4 +17,17 @@ router.post(
   commentController.createArticleComment
 );
 
+router.delete(
+  "/thread/:id",
+  auth,
+  checkGeneral,
+  commentController.deleteThreadComment
+);
+router.delete(
+  "/article/:id",
+  auth,
+  checkGeneral,
+  commentController.deleteArticleComment
+);
+
 module.exports = router;

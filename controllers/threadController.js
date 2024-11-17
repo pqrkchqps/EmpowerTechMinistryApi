@@ -89,7 +89,7 @@ exports.getThreadById = async (req, res) => {
     // Check if user exists
     const parentThreadResult = await db.query(
       sql.type(Thread)`SELECT 
-      t.title, t.content, t.id, u.username, u.name, u.image, u.description, u.date, t.views, t.comment_count,
+      t.title, t.content, t.id, u.id as userid, u.username, u.name, u.image, u.description, u.date, t.views, t.comment_count,
       EXTRACT (YEAR FROM t.date) AS YEAR,
       EXTRACT (MONTH FROM t.date) AS MONTH,
       EXTRACT (DAY FROM t.date) AS DAY
@@ -101,7 +101,7 @@ exports.getThreadById = async (req, res) => {
 
     const commentsResult = await db.query(
       sql.type(Comment)`SELECT 
-      c.content, c.id, c.parentid, u.username, u.name, u.image,
+      c.content, c.id, c.parentid, u.id as userid, u.username, u.name, u.image,
       EXTRACT (YEAR FROM c.date) AS YEAR,
       EXTRACT (MONTH FROM c.date) AS MONTH,
       EXTRACT (DAY FROM c.date) AS DAY
@@ -122,6 +122,23 @@ exports.getThreadById = async (req, res) => {
         recursivelyFillChildren(comment);
       });
     }
+
+    recursivelyRemoveDeletedLeaves(parentThread);
+
+    function recursivelyRemoveDeletedLeaves(parent) {
+      const childrenToRemove = [];
+      parent.children.map((child) => {
+        const countOfChildren = recursivelyRemoveDeletedLeaves(child);
+        if (child.content === "deleted" && countOfChildren === 0) {
+          childrenToRemove.push(child.id);
+        }
+      });
+      parent.children = parent.children.filter(
+        (c) => !childrenToRemove.includes(c.id)
+      );
+      return parent.children.length;
+    }
+
     console.log("Root or Parent Thread returned by getThreadById");
     console.log(parentThread);
     res.json({ thread: parentThread });

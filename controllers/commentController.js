@@ -46,5 +46,43 @@ function createCommentFunctionWithType(type) {
   };
 }
 
+function deleteCommentFunctionWithType(type) {
+  return async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { id: userId } = req.user;
+
+      if (!id || !userId) {
+        console.log("Missing id");
+        return res.status(400).json({ error: "Missing id" });
+      }
+
+      const db = await pool;
+
+      const foundCommentResult = await db.query(
+        sql.type(Comment)`SELECT * FROM comments WHERE id = ${id};`
+      );
+
+      const comment = foundCommentResult.rows[0];
+
+      if (comment.userid === userId) {
+        const deletedCommentResult = await db.query(
+          sql.type(Comment)`update comments 
+          SET content = 'deleted'
+          WHERE id = ${id} and userid = ${userId};`
+        );
+        res.json({ deletedComment: deletedCommentResult.rows[0] });
+      } else {
+        res.status(401).json({ error: `Do not own comment ${id}` });
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: "Server error" });
+    }
+  };
+}
+
 exports.createThreadComment = createCommentFunctionWithType("thread");
 exports.createArticleComment = createCommentFunctionWithType("article");
+exports.deleteThreadComment = deleteCommentFunctionWithType("thread");
+exports.deleteArticleComment = deleteCommentFunctionWithType("article");
