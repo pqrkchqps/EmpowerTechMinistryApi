@@ -106,7 +106,8 @@ function editCommentFunctionWithType(type) {
         const updatedCommentResult = await db.query(
           sql.type(Comment)`update comments 
           SET content = ${content}
-          WHERE id = ${id} and userid = ${userId};`
+          WHERE id = ${id} and userid = ${userId}
+          RETURNING *;`
         );
         res.json({ updatedComment: updatedCommentResult.rows[0] });
       } else {
