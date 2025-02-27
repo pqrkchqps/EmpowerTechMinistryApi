@@ -26,6 +26,12 @@ async function seed() {
         comment_count BIGINT NOT NULL DEFAULT 0,
         views BIGINT NOT NULL DEFAULT 0)`);
 
+  db.any(sql.unsafe`CREATE TABLE if not exists resettokens 
+        ( id SERIAL PRIMARY KEY,
+        userid SERIAL NOT NULL references users(id),
+        token VARCHAR,
+        date timestamp NOT NULL DEFAULT NOW() )`);
+
   db.any(sql.unsafe`CREATE TABLE if not exists articles 
         ( id SERIAL PRIMARY KEY,
         userid SERIAL NOT NULL references users(id),

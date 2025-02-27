@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const ResetToken = require("../models/ResetToken");
 const { sql } = require("slonik");
 const pool = require("../db/pool");
 const bcrypt = require("bcryptjs");
@@ -7,6 +8,7 @@ const uuid = require("uuid");
 const uuidv4 = uuid.v4;
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client();
+const sendEmail = require("../utils/sendEmail");
 
 exports.registerUser = async (req, res) => {
   try {
@@ -44,10 +46,6 @@ exports.registerUser = async (req, res) => {
         username = un;
       }
     }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
     const newUser = await db.query(sql.type(
@@ -125,6 +123,97 @@ exports.loginUser = async (req, res) => {
     });
     delete user.password;
     res.header("auth-token", token).json({ user });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.sendLink = async (req, res) => {
+  try {
+    let { email } = req.body;
+
+    if (!email) {
+      console.log("Missing email");
+      return res.status(400).json({ error: "Missing email" });
+    }
+
+    email = email.toLowerCase();
+
+    const db = await pool;
+
+    // Check if user exists
+    const userResult = await db.query(
+      sql.type(User)`SELECT * FROM users WHERE email = ${email};`
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      console.log("Email not found");
+      return res.status(400).json({ error: "Email not found" });
+    }
+
+    let token = await db.query(
+      sql.type(ResetToken)`SELECT * FROM resettokens WHERE userid = ${userId};`
+    );
+    if (!token) {
+      token = await db.query(sql.type(
+        ResetToken
+      )`INSERT INTO resettokens (userid, token)
+      VALUES (${user.id}, ${crypto.randomBytes(32).toString("hex")})
+      RETURNING *;`);
+    }
+
+    const link = `${process.env.BASE_URL}/password-reset/${user.id}/${token.token}`;
+    await sendEmail(user.email, "Password reset", link);
+
+    res
+      .status(200)
+      .json({ msg: "password reset link sent to your email account" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { userId, token } = req.params;
+
+    if (!userId || !token || !password) {
+      console.log("Missing userId or token or password");
+      return res
+        .status(400)
+        .json({ error: "Missing userId or token or password" });
+    }
+
+    const dbToken = await db.query(
+      sql.type(
+        ResetToken
+      )`SELECT * FROM resettokens WHERE userid = ${userId} AND token = ${token};`
+    );
+    if (!dbToken) return res.status(400).send("Invalid link or expired");
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const updatedUser = await db.query(
+      sql.type(User)`UPDATE users SET 
+      password = ${hashedPassword}
+      WHERE id = ${userId}
+      RETURNING email;`
+    );
+
+    await db.query(
+      sql.type(ResetToken)`DELETE FROM resettokens 
+      WHERE id = ${dbToken.id};`
+    );
+
+    res.status(200).json({
+      msg: "user " + updatedUser.rows[0].email + " password reset sucessfully.",
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });
