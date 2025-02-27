@@ -18,6 +18,7 @@ const sendEmail = async (email, subject, text) => {
             subject: subject,
             text: text,
         });
+        console.log(`Reset email sent to ${email}`);
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: "Server error, Email not sent" });
