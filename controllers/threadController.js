@@ -5,6 +5,7 @@ const pool = require("../db/pool");
 const Comment = require("../models/Comment");
 
 exports.createThread = async (req, res) => {
+  console.log("test");
   try {
     const { title, content } = req.body;
     const { id } = req.user;
