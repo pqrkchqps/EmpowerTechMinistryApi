@@ -18,7 +18,12 @@ const checkUser = (type) => async (req, res, next) => {
 
   if (userExists.rows.length === 0) {
     console.log("User Id doesn't exist");
-    return res.status(400).json({ error: "User Id doesn't exist" });
+    return res
+      .status(400)
+      .json({
+        error:
+          "User Id doesn't exist" + type ? `or is not of type ${type}` : "",
+      });
   } else {
     next();
   }

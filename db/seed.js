@@ -32,6 +32,7 @@ async function seed() {
         token VARCHAR,
         date timestamp NOT NULL DEFAULT NOW() )`);
 
+  await db.any(sql.unsafe`DROP TABLE if exists articles cascade;`);
   db.any(sql.unsafe`CREATE TABLE if not exists articles 
         ( id SERIAL PRIMARY KEY,
         userid SERIAL NOT NULL references users(id),
@@ -45,12 +46,17 @@ async function seed() {
   db.any(sql.unsafe`CREATE TABLE if not exists articlesections 
         ( id SERIAL PRIMARY KEY,
         articleid SERIAL NOT NULL references articles(id),
-        title VARCHAR`);
+        title VARCHAR)`);
+
+  db.any(sql.unsafe`CREATE TABLE if not exists articlekeywords
+        ( id SERIAL PRIMARY KEY,
+        articleid SERIAL NOT NULL references articles(id),
+        content VARCHAR)`);
 
   db.any(sql.unsafe`CREATE TABLE if not exists articles 
         ( id SERIAL PRIMARY KEY,
         articlesectionid SERIAL NOT NULL references articlesections(id),
-        content VARCHAR`);
+        content VARCHAR)`);
 
   db.any(sql.unsafe`CREATE TABLE if not exists comments 
         ( id SERIAL PRIMARY KEY,
@@ -106,7 +112,6 @@ async function seed() {
 
         PERFORM pg_notify('article', 
           JSON_BUILD_OBJECT(
-            'content', NEW.content, 
             'id', NEW.id, 
             'username', username,
             'userid', NEW.userid,
@@ -114,7 +119,10 @@ async function seed() {
             'month', EXTRACT (MONTH FROM NEW.date),
             'day', EXTRACT (DAY FROM NEW.date),
             'title', NEW.title,
-            'views', NEW.views
+            'views', NEW.views,
+            'image', NEW.image,
+            'type', NEW.type,
+            'comment_count', NEW.comment_count
           )::TEXT
         );
         RETURN NEW;
