@@ -36,9 +36,21 @@ async function seed() {
         ( id SERIAL PRIMARY KEY,
         userid SERIAL NOT NULL references users(id),
         title VARCHAR,
-        content VARCHAR,
+        image VARCHAR,
+        type VARCHAR,
         date timestamp NOT NULL DEFAULT NOW(),
+        comment_count BIGINT NOT NULL DEFAULT 0,
         views BIGINT NOT NULL DEFAULT 0)`);
+
+  db.any(sql.unsafe`CREATE TABLE if not exists articlesections 
+        ( id SERIAL PRIMARY KEY,
+        articleid SERIAL NOT NULL references articles(id),
+        title VARCHAR`);
+
+  db.any(sql.unsafe`CREATE TABLE if not exists articles 
+        ( id SERIAL PRIMARY KEY,
+        articlesectionid SERIAL NOT NULL references articlesections(id),
+        content VARCHAR`);
 
   db.any(sql.unsafe`CREATE TABLE if not exists comments 
         ( id SERIAL PRIMARY KEY,

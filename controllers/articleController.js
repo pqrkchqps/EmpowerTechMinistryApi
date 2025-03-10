@@ -45,11 +45,19 @@ exports.getAllArticles = async (req, res) => {
   try {
     const db = await pool;
 
-    // Check if user exists
     const articleResult = await db.query(
-      sql.type(Article)`SELECT * FROM articles;`
+      sql.type(Article)`SELECT 
+      a.title, a.id, u.username, a.views, a.comment_count, ars.*, sp.*
+      EXTRACT (YEAR FROM a.date) AS YEAR,
+      EXTRACT (MONTH FROM a.date) AS MONTH,
+      EXTRACT (DAY FROM a.date) AS DAY 
+      FROM articles a
+      LEFT JOIN articlesections ars ON a.articlesectionid = ars.id
+      LEFT JOIN sectionparagraphs sp ON a.sectionparagraphid = sp.id
+      LEFT JOIN users u ON a.userid = u.id;`
     );
     const articles = articleResult.rows;
+    
     console.log("Articles returned by getAllArticles");
     console.log({ articles });
     res.json({ articles });
