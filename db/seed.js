@@ -4,7 +4,7 @@ const { sql } = require("slonik");
 async function seed() {
   const db = await pool;
 
-  db.any(sql.unsafe`CREATE TABLE if not exists users 
+  await db.any(sql.unsafe`CREATE TABLE if not exists users 
         ( id SERIAL PRIMARY KEY,
         email VARCHAR unique NOT NULL,
         password VARCHAR NOT NULL,
@@ -32,13 +32,32 @@ async function seed() {
         token VARCHAR,
         date timestamp NOT NULL DEFAULT NOW() )`);
 
-  db.any(sql.unsafe`CREATE TABLE if not exists articles 
+  await db.any(sql.unsafe`CREATE TABLE if not exists articles 
         ( id SERIAL PRIMARY KEY,
         userid SERIAL NOT NULL references users(id),
         title VARCHAR,
-        content VARCHAR,
+        image VARCHAR,
+        type VARCHAR,
         date timestamp NOT NULL DEFAULT NOW(),
+        comment_count BIGINT NOT NULL DEFAULT 0,
         views BIGINT NOT NULL DEFAULT 0)`);
+
+  await db.any(sql.unsafe`CREATE TABLE if not exists articlesections 
+        ( id SERIAL PRIMARY KEY,
+        articleid SERIAL NOT NULL references articles(id),
+        sequence INT NOT NULL,
+        title VARCHAR)`);
+
+  db.any(sql.unsafe`CREATE TABLE if not exists articlekeywords
+        ( id SERIAL PRIMARY KEY,
+        articleid SERIAL NOT NULL references articles(id),
+        content VARCHAR)`);
+
+  db.any(sql.unsafe`CREATE TABLE if not exists sectionparagraphs
+        ( id SERIAL PRIMARY KEY,
+        articlesectionid SERIAL NOT NULL references articlesections(id),
+        sequence INT NOT NULL,
+        content VARCHAR)`);
 
   db.any(sql.unsafe`CREATE TABLE if not exists comments 
         ( id SERIAL PRIMARY KEY,
@@ -94,7 +113,6 @@ async function seed() {
 
         PERFORM pg_notify('article', 
           JSON_BUILD_OBJECT(
-            'content', NEW.content, 
             'id', NEW.id, 
             'username', username,
             'userid', NEW.userid,
@@ -102,7 +120,10 @@ async function seed() {
             'month', EXTRACT (MONTH FROM NEW.date),
             'day', EXTRACT (DAY FROM NEW.date),
             'title', NEW.title,
-            'views', NEW.views
+            'views', NEW.views,
+            'image', NEW.image,
+            'type', NEW.type,
+            'comment_count', NEW.comment_count
           )::TEXT
         );
         RETURN NEW;
