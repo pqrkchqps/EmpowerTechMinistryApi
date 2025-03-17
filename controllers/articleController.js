@@ -286,11 +286,51 @@ exports.getArticleById = async (req, res) => {
 
     const db = await pool;
 
-    // Check if user exists
-    const parentArticleResult = await db.query(
-      sql.type(Article)`SELECT * FROM articles WHERE id = ${id};`
+    const articleResult = await db.query(
+      sql.type(Article)`
+      SELECT 
+          a.id, 
+          a.title, 
+          to_char(a.date, 'Month DD, YYYY') AS time,
+          a.image,
+          a.type,
+          u.username, 
+          a.views, 
+          a.comment_count, 
+          COALESCE(
+              (
+                  SELECT jsonb_agg(
+                      jsonb_build_object(
+                          'title', ars.title,
+                          'paragraphs', (
+                              SELECT jsonb_agg(sp.content ORDER BY sp.sequence)
+                              FROM sectionparagraphs sp
+                              WHERE sp.articlesectionid = ars.id
+                          )
+                      )
+                      ORDER BY ars.sequence
+                  )
+                  FROM articlesections ars
+                  WHERE ars.articleid = a.id
+              ),
+              '[]'::jsonb
+          ) AS sections,
+          COALESCE(
+              (
+                  SELECT jsonb_agg(DISTINCT ak.content)
+                  FROM articlekeywords ak
+                  WHERE ak.articleid = a.id
+              ),
+              '[]'::jsonb
+          ) AS keywords
+      FROM articles a
+      LEFT JOIN users u ON a.userid = u.id
+      WHERE a.id = ${id}
+      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count
+      ORDER BY a.date;
+      `
     );
-    const parentArticle = parentArticleResult.rows[0];
+    const parentArticle = articleResult.rows[0];
 
     const commentsResult = await db.query(
       sql.type(
