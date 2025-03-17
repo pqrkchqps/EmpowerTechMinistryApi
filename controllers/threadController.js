@@ -86,7 +86,7 @@ exports.editThread = async (req, res) => {
         LEFT JOIN users u ON t.userid = u.id
         WHERE t.id = ${threadId};`
       );
-      console.log("Thread returned by createThread");
+      console.log("Thread returned by editThread");
       console.log(threadResult.rows[0]);
       res.json({ thread: threadResult.rows[0] });
     } else {

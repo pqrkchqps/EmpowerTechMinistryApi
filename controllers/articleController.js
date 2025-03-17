@@ -57,13 +57,13 @@ exports.createArticle = async (req, res) => {
       const getSection = storeValue(sections[sectionIndex]);
 
       newArticleSectionPromise.then((newArticleSectionResult) => {
-        const articlesection = newArticleSectionResult.rows[0];
+        const articleSection = newArticleSectionResult.rows[0];
 
         for (const paragraphIndex in getSection().paragraphs) {
           const newSectionParagraphPromise = db.query(sql.type(
             SectionParagraph
           )`INSERT INTO sectionparagraphs (articlesectionid, sequence, content)
-          VALUES (${articlesection.id}, ${paragraphIndex}, ${
+          VALUES (${articleSection.id}, ${paragraphIndex}, ${
             getSection().paragraphs[paragraphIndex]
           })
           RETURNING *;`);
@@ -88,6 +88,128 @@ exports.createArticle = async (req, res) => {
       console.log("Article returned by createArticle");
       console.log(article);
       res.json({ article });
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.editArticle = async (req, res) => {
+  try {
+    const { title, image, type, sections, keywords } = req.body;
+    const { id } = req.params;
+    const { id: userId } = req.user;
+
+    if (!title || !image || !type || !sections || !keywords || !id) {
+      console.log("Missing title, image, type, sections, keywords or id");
+      return res.status(400).json({
+        error: "Missing title, image, type, sections, keywords or id",
+      });
+    }
+
+    const db = await pool;
+    // Check if user exists
+    const userExists = await db.query(
+      sql.type(User)`SELECT * FROM users WHERE id = ${userId};`
+    );
+    if (userExists.rows.length === 0) {
+      console.log("User Id doesn't exist or is not admin");
+      return res
+        .status(401)
+        .json({ error: "User Id doesn't exist or is not admin" });
+    }
+
+    const newArticleResult = await db.query(sql.type(Article)`
+    UPDATE articles
+    SET 
+      title = ${title},
+      image = ${image},
+      type = ${type}
+    WHERE id = ${id}
+    RETURNING *;`);
+    const article = newArticleResult.rows[0];
+
+    const deletePromises = [];
+
+    const articleSectionsResult = await db.query(sql.type(ArticleSection)`
+      SELECT * FROM articlesections
+      WHERE articleid = ${id};`);
+
+    const articleSections = articleSectionsResult.rows;
+
+    for (const articleSection of articleSections) {
+      const sectionParagraphPromise = db.query(
+        sql.type(
+          SectionParagraph
+        )`DELETE FROM sectionparagraphs WHERE articlesectionid = ${articleSection.id};`
+      );
+      deletePromises.push(sectionParagraphPromise);
+    }
+
+    const articleKeywordPromise = db.query(
+      sql.type(
+        ArticleKeyword
+      )`DELETE FROM articlekeywords WHERE articleid = ${id};`
+    );
+
+    deletePromises.push(articleKeywordPromise);
+
+    Promise.all(deletePromises).then(async () => {
+      await db.query(sql.type(ArticleSection)`
+        DELETE FROM articlesections
+        WHERE articleid = ${id};`);
+
+      const promises = [];
+
+      function storeValue(v) {
+        return () => v;
+      }
+
+      for (const sectionIndex in sections) {
+        const newArticleSectionPromise = db.query(sql.type(
+          ArticleSection
+        )`INSERT INTO articlesections (articleid, sequence, title)
+        VALUES (${id}, ${sectionIndex}, ${sections[sectionIndex].title})
+        RETURNING *;`);
+
+        promises.push(newArticleSectionPromise);
+
+        const getSection = storeValue(sections[sectionIndex]);
+
+        newArticleSectionPromise.then((newArticleSectionResult) => {
+          const articleSection = newArticleSectionResult.rows[0];
+
+          for (const paragraphIndex in getSection().paragraphs) {
+            const newSectionParagraphPromise = db.query(sql.type(
+              SectionParagraph
+            )`INSERT INTO sectionparagraphs (articlesectionid, sequence, content)
+            VALUES (${articleSection.id}, ${paragraphIndex}, ${
+              getSection().paragraphs[paragraphIndex]
+            })
+            RETURNING *;`);
+            promises.push(newSectionParagraphPromise);
+          }
+        });
+      }
+
+      for (const keyword of keywords) {
+        const newArticleKeywordPromise = db.query(sql.type(
+          ArticleKeyword
+        )`INSERT INTO articlekeywords (articleid, content)
+        VALUES (${id}, ${keyword})
+        RETURNING *;`);
+
+        promises.push(newArticleKeywordPromise);
+      }
+
+      Promise.all(promises).then((results) => {
+        article.sections = sections;
+        article.keywords = keywords;
+        console.log("Article returned by createArticle");
+        console.log(article);
+        res.json({ article });
+      });
     });
   } catch (err) {
     console.log(err);
