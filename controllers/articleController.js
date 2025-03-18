@@ -262,7 +262,7 @@ exports.getAllArticles = async (req, res) => {
       FROM articles a
       LEFT JOIN users u ON a.userid = u.id
       GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id
-      ORDER BY a.date;
+      ORDER BY a.date DESC;
       `
     );
     const articles = articleResult.rows;
@@ -329,7 +329,6 @@ exports.getArticleById = async (req, res) => {
       LEFT JOIN users u ON a.userid = u.id
       WHERE a.id = ${id}
       GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id
-      ORDER BY a.date;
       `
     );
     const parentArticle = articleResult.rows[0];
