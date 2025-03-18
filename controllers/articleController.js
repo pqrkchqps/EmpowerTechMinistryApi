@@ -230,6 +230,7 @@ exports.getAllArticles = async (req, res) => {
           a.image,
           a.type,
           u.username, 
+          u.id AS userid,
           a.views, 
           a.comment_count, 
           COALESCE(
@@ -260,7 +261,7 @@ exports.getAllArticles = async (req, res) => {
           ) AS keywords
       FROM articles a
       LEFT JOIN users u ON a.userid = u.id
-      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count
+      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id
       ORDER BY a.date;
       `
     );
@@ -295,6 +296,7 @@ exports.getArticleById = async (req, res) => {
           a.image,
           a.type,
           u.username, 
+          u.id AS userid,
           a.views, 
           a.comment_count, 
           COALESCE(
@@ -326,7 +328,7 @@ exports.getArticleById = async (req, res) => {
       FROM articles a
       LEFT JOIN users u ON a.userid = u.id
       WHERE a.id = ${id}
-      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count
+      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id
       ORDER BY a.date;
       `
     );
