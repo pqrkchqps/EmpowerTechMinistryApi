@@ -334,10 +334,16 @@ exports.getArticleById = async (req, res) => {
     const parentArticle = articleResult.rows[0];
 
     const commentsResult = await db.query(
-      sql.type(
-        Comment
-      )`SELECT * FROM comments WHERE rootid = ${id} AND type = 'article';`
+      sql.type(Comment)`SELECT 
+      c.content, c.id, c.parentid, u.id as userid, u.username, u.name, u.image,
+      EXTRACT (YEAR FROM c.date) AS YEAR,
+      EXTRACT (MONTH FROM c.date) AS MONTH,
+      EXTRACT (DAY FROM c.date) AS DAY
+      FROM comments c 
+      LEFT JOIN users u ON c.userid = u.id
+      WHERE rootid = ${id} AND c.type = 'article';`
     );
+    
     const comments = commentsResult.rows;
     parentArticle.children = comments.filter((c) => c.parentid === -1);
     parentArticle.children.forEach((comment) => {
