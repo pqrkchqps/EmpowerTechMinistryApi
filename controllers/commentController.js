@@ -36,7 +36,7 @@ function createCommentFunctionWithType(type) {
         LEFT JOIN users u ON c.userid = u.id
         WHERE c.id = ${comment.id};`
       );
-      console.log("Comment returned by createThreadComment");
+      console.log("Comment returned by createCommentFunctionWithType");
       console.log(commentsResult.rows[0]);
       res.json({ comment: commentsResult.rows[0] });
     } catch (err) {

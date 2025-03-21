@@ -343,7 +343,7 @@ exports.getArticleById = async (req, res) => {
       LEFT JOIN users u ON c.userid = u.id
       WHERE rootid = ${id} AND c.type = 'article';`
     );
-    
+
     const comments = commentsResult.rows;
     parentArticle.children = comments.filter((c) => c.parentid === -1);
     parentArticle.children.forEach((comment) => {
@@ -356,6 +356,23 @@ exports.getArticleById = async (req, res) => {
         recursivelyFillChildren(comment);
       });
     }
+
+    recursivelyRemoveDeletedLeaves(parentArticle);
+
+    function recursivelyRemoveDeletedLeaves(parent) {
+      const childrenToRemove = [];
+      parent.children.map((child) => {
+        const countOfChildren = recursivelyRemoveDeletedLeaves(child);
+        if (child.content === "deleted" && countOfChildren === 0) {
+          childrenToRemove.push(child.id);
+        }
+      });
+      parent.children = parent.children.filter(
+        (c) => !childrenToRemove.includes(c.id)
+      );
+      return parent.children.length;
+    }
+
     console.log("Root or Parent Article returned by getArticleById");
     console.log(parentArticle);
     res.json({ article: parentArticle });
