@@ -299,14 +299,14 @@ exports.getArticleById = async (req, res) => {
           to_char(a.date, 'Month DD, YYYY') AS time,
           a.image,
           a.type,
-          u.username, 
-          u.name, 
-          u.image AS userImage, 
-          u.description AS userDescription, 
+          u.username,
+          u.name,
+          u.image AS userImage,
+          u.description AS userDescription,
           u.date as userDate,
           u.id AS userid,
-          a.views, 
-          a.comment_count, 
+          a.views,
+          a.comment_count,
           COALESCE(
               (
                   SELECT jsonb_agg(
@@ -336,7 +336,7 @@ exports.getArticleById = async (req, res) => {
       FROM articles a
       LEFT JOIN users u ON a.userid = u.id
       WHERE a.id = ${id}
-      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id
+      GROUP BY a.id, a.title, a.date, a.image, a.type, u.username, a.views, a.comment_count, u.id, u.name, u.image, u.description, u.date
       `
     );
     const parentArticle = articleResult.rows[0];
