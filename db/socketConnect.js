@@ -1,13 +1,16 @@
 const pgp = require("pg-promise")();
 const socket = require("socket.io");
-function socketConnect(server) {
+
+async function socketConnect(server) {
   const io = socket(server);
+
   let aliveSockets = [];
+  let uidToMessages = [];
 
   // broadcasting ping
   setInterval(function () {
     io.emit("ping", { timestamp: new Date().getTime() });
-  }, 5000); // 10 seconds
+  }, 5000);
 
   // cleaning up stalled socket which does not answer to ping
   setInterval(function () {
@@ -25,6 +28,7 @@ function socketConnect(server) {
 
   io.on("connection", function (socket) {
     console.log("open connection");
+    let uidForSocket = null;
     aliveSockets[socket.id] = { socket, lastPong: new Date().getTime() / 1000 };
 
     socket.on("pong", function () {
@@ -32,6 +36,39 @@ function socketConnect(server) {
         socket: socket,
         lastPong: new Date().getTime() / 1000,
       };
+    });
+
+    socket.on("notificationsRecieved", ({ uid, type }) => {
+      console.log("notificationsRecieved", uid, type);
+      socket.emit("notificationsAck", type);
+      if (uidToMessages[uid]) delete uidToMessages[uid][type];
+    });
+
+    function sendMessages() {
+      if (uidForSocket) {
+        for (const type in uidToMessages[uidForSocket]) {
+          socket.emit("newNotifications", {
+            data: uidToMessages[uidForSocket][type],
+            type,
+          });
+        }
+      }
+    }
+
+    // send messages
+    setInterval(() => {
+      sendMessages();
+    }, 2000);
+
+    socket.on("uid", (uid) => {
+      console.log(uid);
+      uidForSocket = uid;
+      socket.emit("uidRecieved");
+      if (uidToMessages[uid] && Object.keys(uidToMessages[uid]).length > 0) {
+        sendMessages();
+      } else {
+        uidToMessages[uid] = [];
+      }
     });
   });
 
@@ -58,10 +95,19 @@ function socketConnect(server) {
         // Handle the notification payload here
         const notificationData = JSON.parse(data.payload);
         notificationData.children = [];
-        io.emit("newNotification", {data: notificationData, type: data.channel});
+
+        const type = data.channel;
+
+        for (const uid in uidToMessages) {
+          if (!uidToMessages[uid][type]) {
+            uidToMessages[uid][type] = [];
+          }
+
+          // for each socket, but what if two are somehow open, consider checking in interval and deleting old connections
+          uidToMessages[uid][type].push(notificationData);
+        }
       });
     }
-
     startNotificationListener().catch((error) => {
       console.error("Error in notification listener:", error);
     });

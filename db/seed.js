@@ -3,6 +3,7 @@ const { sql } = require("slonik");
 
 async function seed() {
   const db = await pool;
+  const test = [];
 
   await db.any(sql.unsafe`CREATE TABLE if not exists users 
         ( id SERIAL PRIMARY KEY,
@@ -122,8 +123,7 @@ async function seed() {
             'title', NEW.title,
             'views', NEW.views,
             'image', NEW.image,
-            'type', NEW.type,
-            'comment_count', NEW.comment_count
+            'type', NEW.type
           )::TEXT
         );
         RETURN NEW;
@@ -145,15 +145,28 @@ async function seed() {
       FROM users u
       WHERE u.id = NEW.userid;
 
-      -- Retrieve the title of the thread containing the comment
-      SELECT t.title INTO title
-      FROM threads t
-      WHERE t.id = NEW.rootid;
+      IF NEW.type = 'thread' THEN
+        -- Retrieve the title of the thread containing the comment
+        SELECT t.title INTO title
+        FROM threads t
+        WHERE t.id = NEW.rootid;
 
-      -- Update comment_count of matching thread
-      UPDATE threads t
-      SET comment_count = comment_count + 1
-      WHERE t.id = NEW.rootid;
+        -- Update comment_count of matching thread
+        UPDATE threads t
+        SET comment_count = comment_count + 1
+        WHERE t.id = NEW.rootid;
+
+      ELSIF NEW.type = 'article' THEN
+        -- Retrieve the title of the thread containing the comment
+        SELECT a.title INTO title
+        FROM articles a
+        WHERE a.id = NEW.rootid;
+
+        -- Update comment_count of matching thread
+        UPDATE articles a
+        SET comment_count = comment_count + 1
+        WHERE a.id = NEW.rootid;
+      END IF;
 
       PERFORM pg_notify('comment', 
         JSON_BUILD_OBJECT(
