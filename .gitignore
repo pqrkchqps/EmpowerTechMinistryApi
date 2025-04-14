@@ -1,2 +1,7 @@
 .env
 node_modules
+
+firebase-admin.json
+google-services.json
+service.json
+

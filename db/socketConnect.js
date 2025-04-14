@@ -1,11 +1,24 @@
 const pgp = require("pg-promise")();
 const socket = require("socket.io");
+const admin = require("firebase-admin");
+const serviceAccount = JSON.parse(process.env.SERVICEJSON);
+const firebaseConfig = {
+  projectId: "empower-tech-ministry-18d81",
+  messagingSenderId: "176389127114",
+  appId: "1:176389127114:android:602988a8bba78503fd2d33",
+  apiKey: "AIzaSyDeA8l8Xcq2L1tM3DI7X4n1YmaDbdT3pJE",
+  credential: admin.credential.cert(serviceAccount),
+};
+admin.initializeApp(firebaseConfig);
+
+const messaging = admin.messaging();
 
 async function socketConnect(server) {
   const io = socket(server);
 
   let aliveSockets = [];
   let uidToMessages = [];
+  let uidToTokens = [];
 
   // broadcasting ping
   setInterval(function () {
@@ -28,7 +41,6 @@ async function socketConnect(server) {
 
   io.on("connection", function (socket) {
     console.log("open connection");
-    let uidForSocket = null;
     aliveSockets[socket.id] = { socket, lastPong: new Date().getTime() / 1000 };
 
     socket.on("pong", function () {
@@ -38,17 +50,21 @@ async function socketConnect(server) {
       };
     });
 
+    socket.on("getNotifications", (uid) => {
+      sendMessages(uid);
+    });
+
     socket.on("notificationsRecieved", ({ uid, type }) => {
       console.log("notificationsRecieved", uid, type);
       socket.emit("notificationsAck", type);
       if (uidToMessages[uid]) delete uidToMessages[uid][type];
     });
 
-    function sendMessages() {
-      if (uidForSocket) {
-        for (const type in uidToMessages[uidForSocket]) {
+    function sendMessages(uid) {
+      if (uid) {
+        for (const type in uidToMessages[uid]) {
           socket.emit("newNotifications", {
-            data: uidToMessages[uidForSocket][type],
+            data: uidToMessages[uid][type],
             type,
           });
         }
@@ -57,15 +73,20 @@ async function socketConnect(server) {
 
     // send messages
     setInterval(() => {
-      sendMessages();
+      if (uidForSocket) {
+        sendMessages(uidForSocket);
+      }
     }, 2000);
 
-    socket.on("uid", (uid) => {
+    socket.on("uid", ({ uid, token }) => {
       console.log(uid);
       uidForSocket = uid;
+      tokenForSocket = null;
+      uidToTokens[uid] = token;
+      console.log("uid, token", uid, uidToTokens[uid]);
       socket.emit("uidRecieved");
       if (uidToMessages[uid] && Object.keys(uidToMessages[uid]).length > 0) {
-        sendMessages();
+        sendMessages(uid);
       } else {
         uidToMessages[uid] = [];
       }
@@ -102,9 +123,36 @@ async function socketConnect(server) {
           if (!uidToMessages[uid][type]) {
             uidToMessages[uid][type] = [];
           }
-
           // for each socket, but what if two are somehow open, consider checking in interval and deleting old connections
           uidToMessages[uid][type].push(notificationData);
+        }
+
+        for (const uid in uidToTokens) {
+          messaging
+            .send({
+              token: uidToTokens[uid],
+              notification: {
+                title: notificationData.title,
+                body:
+                  notificationData.username + " - " + notificationData.content,
+              },
+              data: {
+                payload: JSON.stringify({ data: notificationData, type }),
+              },
+              android: {
+                priority: "high",
+                notification: {
+                  icon: "notification_icon",
+                  color: "#010049",
+                },
+              },
+            })
+            .then((response) => {
+              console.log("Successfully sent message:", response);
+            })
+            .catch((error) => {
+              console.log("Error sending message:", error);
+            });
         }
       });
     }
