@@ -158,7 +158,7 @@ exports.sendLink = async (req, res) => {
     }
 
     let token = await db.query(
-      sql.type(ResetToken)`SELECT * FROM resettokens WHERE userid = ${userId};`
+      sql.type(ResetToken)`SELECT * FROM resettokens WHERE userid = ${user.id};`
     );
     if (!token) {
       token = await db.query(sql.type(
