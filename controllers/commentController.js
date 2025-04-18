@@ -1,4 +1,6 @@
 const Comment = require("../models/Comment");
+const Article = require("../models/Article");
+const Thread = require("../models/Thread");
 const User = require("../models/User");
 const { sql } = require("slonik");
 const pool = require("../db/pool");
@@ -71,6 +73,25 @@ function deleteCommentFunctionWithType(type) {
           SET content = 'deleted'
           WHERE id = ${id} and userid = ${userId};`
         );
+
+        if (type == "thread") {
+          db.query(
+            sql.type(Thread)`
+             -- Update comment_count of matching thread
+              UPDATE threads t
+              SET comment_count = comment_count - 1
+              WHERE t.id = ${comment.rootid};`
+          );
+        } else if (type == "article") {
+          db.query(
+            sql.type(Article)`
+             -- Update comment_count of matching articles
+              UPDATE articles a
+              SET comment_count = comment_count - 1
+              WHERE a.id = ${comment.rootid};`
+          )
+        }
+
         res.json({ deletedComment: deletedCommentResult.rows[0] });
       } else {
         res.status(401).json({ error: `Do not own comment ${id}` });
