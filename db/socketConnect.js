@@ -42,6 +42,7 @@ async function socketConnect(server) {
   io.on("connection", function (socket) {
     console.log("open connection");
     aliveSockets[socket.id] = { socket, lastPong: new Date().getTime() / 1000 };
+    var uidForSocket = null;
 
     socket.on("pong", function () {
       aliveSockets[socket.id] = {
@@ -76,7 +77,7 @@ async function socketConnect(server) {
       if (uidForSocket) {
         sendMessages(uidForSocket);
       }
-    }, 2000);
+    }, 5000);
 
     socket.on("uid", ({ uid, token }) => {
       console.log(uid);
