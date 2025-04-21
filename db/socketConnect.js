@@ -19,6 +19,7 @@ async function socketConnect(server) {
   let aliveSockets = [];
   let uidToMessages = [];
   let uidToTokens = [];
+  let firebaseTokens = new Set([]);
 
   // broadcasting ping
   setInterval(function () {
@@ -92,6 +93,12 @@ async function socketConnect(server) {
         uidToMessages[uid] = [];
       }
     });
+
+    socket.on("token", ({ token }) => {
+      console.log("token", token);
+      socket.emit("tokenRecieved");
+      firebaseTokens.add(token);
+    });
   });
 
   async function subscribe() {
@@ -126,6 +133,28 @@ async function socketConnect(server) {
           }
           // for each socket, but what if two are somehow open, consider checking in interval and deleting old connections
           uidToMessages[uid][type].push(notificationData);
+        }
+
+        for (const token of firebaseTokens) {
+          console.log(token);
+          messaging.send({
+            token,
+            notification: {
+              title: notificationData.title,
+              body:
+                notificationData.username + " - " + notificationData.content,
+            },
+            data: {
+              payload: JSON.stringify({ data: notificationData, type }),
+            },
+            android: {
+              priority: "high",
+              notification: {
+                icon: "notification_icon",
+                color: "#010049",
+              },
+            },
+          });
         }
 
         for (const uid in uidToTokens) {
