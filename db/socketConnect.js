@@ -135,55 +135,71 @@ async function socketConnect(server) {
           uidToMessages[uid][type].push(notificationData);
         }
 
-        for (const token of firebaseTokens) {
-          console.log(token);
-          messaging.send({
-            token,
-            notification: {
-              title: notificationData.title,
-              body:
-                notificationData.username + " - " + notificationData.content,
-            },
-            data: {
-              payload: JSON.stringify({ data: notificationData, type }),
-            },
-            android: {
-              priority: "high",
-              notification: {
-                icon: "notification_icon",
-                color: "#010049",
-              },
-            },
-          });
-        }
-
-        for (const uid in uidToTokens) {
-          messaging
-            .send({
-              token: uidToTokens[uid],
-              notification: {
-                title: notificationData.title,
-                body:
-                  notificationData.username + " - " + notificationData.content,
-              },
-              data: {
-                payload: JSON.stringify({ data: notificationData, type }),
-              },
-              android: {
-                priority: "high",
+          for (const token of firebaseTokens) {
+            console.log(token);
+            messaging
+              .send({
+                token,
                 notification: {
-                  icon: "notification_icon",
-                  color: "#010049",
+                  title: notificationData.title,
+                  body:
+                    notificationData.username +
+                    " - " +
+                    notificationData.content,
                 },
-              },
-            })
-            .then((response) => {
-              console.log("Successfully sent message:", response);
-            })
-            .catch((error) => {
-              console.log("Error sending message:", error);
-            });
-        }
+                data: {
+                  payload: JSON.stringify({ data: notificationData, type }),
+                },
+                android: {
+                  priority: "high",
+                  notification: {
+                    icon: "notification_icon",
+                    color: "#010049",
+                  },
+                },
+              })
+              .then((response) => {
+                console.log("Successfully sent message:", response);
+              })
+              .catch((error) => {
+                console.log("Error sending message:", error);
+                if (
+                  error.code === "messaging/registration-token-not-registered"
+                ) {
+                  //firebaseTokens.remove(token);
+                }
+              });
+          }
+
+          for (const uid in uidToTokens) {
+            messaging
+              .send({
+                token: uidToTokens[uid],
+                notification: {
+                  title: notificationData.title,
+                  body:
+                    notificationData.username +
+                    " - " +
+                    notificationData.content,
+                },
+                data: {
+                  payload: JSON.stringify({ data: notificationData, type }),
+                },
+                android: {
+                  priority: "high",
+                  notification: {
+                    icon: "notification_icon",
+                    color: "#010049",
+                  },
+                },
+              })
+              .then((response) => {
+                console.log("Successfully sent message:", response);
+              })
+              .catch((error) => {
+                console.log("Error sending message:", error);
+              });
+          }
       });
     }
     startNotificationListener().catch((error) => {
