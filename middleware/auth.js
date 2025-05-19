@@ -11,7 +11,7 @@ function auth(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     const newToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
-      expiresIn: 3600,
+      //expiresIn: 3600,
     });
     res.set("auth-token", newToken);
     next();
